@@ -1,0 +1,9 @@
+# Virtual env
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+data/
+*.sqlite3
+.DS_Store
