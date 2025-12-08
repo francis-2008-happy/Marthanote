@@ -1,6 +1,7 @@
 # backend/app/main.py
 from fastapi import FastAPI
-from .api import router as api_router
+from .api_v2 import router as api_router
+from .database import init_db
 import nltk
 import asyncio
 import concurrent.futures
@@ -50,6 +51,11 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event():
     await download_nltk_data()
+    # Initialize the SQLite database and tables
+    try:
+        init_db()
+    except Exception as e:
+        print(f"Warning: could not initialize database: {e}")
 
 # Include API router
 app.include_router(api_router, prefix="/api")
