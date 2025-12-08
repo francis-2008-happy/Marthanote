@@ -59,3 +59,18 @@ async def startup_event():
 
 # Include API router
 app.include_router(api_router, prefix="/api")
+
+
+# Root and health endpoints to help with deployments and health checks
+@app.get("/", include_in_schema=False)
+async def root():
+    return {
+        "message": "Marthanote API",
+        "api_prefix": "/api",
+        "docs": "/docs",
+    }
+
+
+@app.get("/health", include_in_schema=False)
+async def health():
+    return {"status": "ok"}
