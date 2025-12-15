@@ -3,6 +3,7 @@ import requests
 import time
 from typing import List, Optional
 import hashlib
+import uuid
 
 # =========================
 # Page Config
@@ -62,6 +63,10 @@ if "pending_query" not in st.session_state:
 
 if "processing_query" not in st.session_state:
     st.session_state.processing_query = False
+
+# Per-device identifier (quick hack). Generated once per browser session.
+if "device_id" not in st.session_state:
+    st.session_state.device_id = str(uuid.uuid4())
 
 
 # =========================
@@ -478,7 +483,8 @@ def display_alerts():
 
 def fetch_documents() -> List[dict]:
     try:
-        res = requests.get(f"{API_URL}/documents", timeout=10)
+        headers = {"X-Device-Id": st.session_state.get("device_id")}
+        res = requests.get(f"{API_URL}/documents", timeout=10, headers=headers)
         res.raise_for_status()
         docs = res.json()
         st.session_state.documents = docs
@@ -489,7 +495,8 @@ def fetch_documents() -> List[dict]:
 
 def set_active_document(doc_id: str):
     try:
-        res = requests.post(f"{API_URL}/documents/{doc_id}/set-active", timeout=10)
+        headers = {"X-Device-Id": st.session_state.get("device_id")}
+        res = requests.post(f"{API_URL}/documents/{doc_id}/set-active", timeout=10, headers=headers)
         res.raise_for_status()
         st.session_state.active_document = doc_id
     except Exception:
@@ -499,7 +506,8 @@ def set_active_document(doc_id: str):
 def delete_document(doc_id: str):
     """Delete a document from the backend and refresh."""
     try:
-        res = requests.delete(f"{API_URL}/documents/{doc_id}", timeout=10)
+        headers = {"X-Device-Id": st.session_state.get("device_id")}
+        res = requests.delete(f"{API_URL}/documents/{doc_id}", timeout=10, headers=headers)
         res.raise_for_status()
         add_alert("success", "Document deleted successfully")
         st.session_state.selected_documents.discard(doc_id)
@@ -513,8 +521,9 @@ def delete_document(doc_id: str):
 def regenerate_summary(doc_id: str):
     """Request backend to regenerate summary and embeddings for the given document."""
     try:
+        headers = {"X-Device-Id": st.session_state.get("device_id")}
         res = requests.post(
-            f"{API_URL}/documents/{doc_id}/summary/regenerate", timeout=10
+            f"{API_URL}/documents/{doc_id}/summary/regenerate", timeout=10, headers=headers
         )
         res.raise_for_status()
         add_alert("success", "Regeneration started. Summary will update when ready.")
@@ -527,8 +536,9 @@ def bulk_delete_documents(document_ids: List[str]):
     """Delete multiple documents via backend bulk endpoint."""
     try:
         payload = {"document_ids": document_ids}
+        headers = {"X-Device-Id": st.session_state.get("device_id")}
         res = requests.post(
-            f"{API_URL}/documents/bulk-delete", json=payload, timeout=30
+            f"{API_URL}/documents/bulk-delete", json=payload, timeout=30, headers=headers
         )
         res.raise_for_status()
         data = res.json()
@@ -546,7 +556,8 @@ def upload_files(
     for f in files:
         files_payload = {"file": (f.name, f.getvalue())}
         try:
-            res = requests.post(f"{API_URL}/upload", files=files_payload, timeout=60)
+            headers = {"X-Device-Id": st.session_state.get("device_id")}
+            res = requests.post(f"{API_URL}/upload", files=files_payload, timeout=60, headers=headers)
             res.raise_for_status()
             data = res.json()
             results.append(data)
@@ -587,7 +598,8 @@ def ask_question(
 
     payload = {"question": question, "document_ids": doc_ids, "use_chat_history": True}
     try:
-        res = requests.post(f"{API_URL}/ask", json=payload, timeout=60)
+        headers = {"X-Device-Id": st.session_state.get("device_id")}
+        res = requests.post(f"{API_URL}/ask", json=payload, timeout=60, headers=headers)
         res.raise_for_status()
         return res.json()
     except Exception as e:

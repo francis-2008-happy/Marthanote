@@ -3,7 +3,7 @@ Enhanced FastAPI routes for production Document AI Assistant.
 Features: Auto-summaries, multi-document support, chat history, and more.
 """
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Header
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -168,7 +168,8 @@ def generate_summary(text: str, filename: str) -> str:
 @router.post("/upload", response_model=UploadResponse)
 async def upload_file(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    x_device_id: Optional[str] = Header(None, convert_underscores=False)
 ):
     """
     Upload and process a document synchronously.
@@ -183,7 +184,8 @@ async def upload_file(
         filename=file.filename,
         file_path=file_location,
         summary="Processing...",
-        is_active=True
+        is_active=True,
+        device_id=x_device_id,
     )
     db.add(doc)
     db.commit()
@@ -261,9 +263,15 @@ async def upload_file(
 # Document Management Endpoints
 # --------------------------
 @router.get("/documents", response_model=List[DocumentListItem])
-async def list_documents(db: Session = Depends(get_db)):
-    """Get list of all uploaded documents sorted by upload time (newest first)."""
-    docs = db.query(DocumentModel).order_by(desc(DocumentModel.upload_time)).all()
+async def list_documents(
+    db: Session = Depends(get_db),
+    x_device_id: Optional[str] = Header(None, convert_underscores=False),
+):
+    """Get list of uploaded documents. If `X-Device-Id` header is provided, filter by device."""
+    query = db.query(DocumentModel)
+    if x_device_id:
+        query = query.filter(DocumentModel.device_id == x_device_id)
+    docs = query.order_by(desc(DocumentModel.upload_time)).all()
     return [DocumentListItem(**doc.to_dict()) for doc in docs]
 
 

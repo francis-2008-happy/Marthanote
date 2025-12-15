@@ -28,7 +28,20 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
     """Initialize database tables on startup."""
+    # Create any missing tables
     Base.metadata.create_all(bind=engine)
+
+    # Ensure the documents table has the device_id column (SQLite won't alter existing tables automatically)
+    try:
+        with engine.connect() as conn:
+            res = conn.execute("PRAGMA table_info(documents);")
+            cols = [r[1] for r in res.fetchall()]
+            if "device_id" not in cols:
+                print("Adding missing 'device_id' column to documents table")
+                conn.execute("ALTER TABLE documents ADD COLUMN device_id TEXT;")
+    except Exception as e:
+        print(f"Warning: could not ensure device_id column exists: {e}")
+
     print("✓ Database tables initialized.")
 
 

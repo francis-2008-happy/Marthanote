@@ -27,6 +27,7 @@ class Document(Base):
     document_size = Column(Integer, default=0)  # Size in bytes
     chunk_count = Column(Integer, default=0)  # Number of chunks created
     is_active = Column(Boolean, default=False)  # Mark as active document for queries
+    device_id = Column(String, nullable=True)  # Optional device identifier for per-device filtering
 
     # Relationships
     chat_messages = relationship("ChatMessage", back_populates="document", cascade="all, delete-orphan")
@@ -39,6 +40,7 @@ class Document(Base):
             "summary": self.summary,
             "chunk_count": self.chunk_count,
             "is_active": self.is_active,
+            "device_id": self.device_id,
         }
 
 
