@@ -176,6 +176,7 @@ async def upload_file(
     The request will complete only after the document is fully processed.
     """
     print("--- Starting file upload ---")
+    print(f"Received X-Device-Id on upload: {x_device_id}")
     file_location = os.path.join(UPLOAD_FOLDER, file.filename)
     print(f"File location: {file_location}")
     
@@ -233,6 +234,9 @@ async def upload_file(
         doc.summary = summary
         doc.chunk_count = len(chunks)
         doc.document_size = len(text)
+        # Ensure device_id stored for visibility/debug
+        if x_device_id:
+            doc.device_id = x_device_id
         db.commit()
         db.refresh(doc)
         
@@ -268,6 +272,7 @@ async def list_documents(
     x_device_id: Optional[str] = Header(None, convert_underscores=False),
 ):
     """Get list of uploaded documents. If `X-Device-Id` header is provided, filter by device."""
+    print(f"List documents called. X-Device-Id: {x_device_id}")
     query = db.query(DocumentModel)
     if x_device_id:
         query = query.filter(DocumentModel.device_id == x_device_id)
