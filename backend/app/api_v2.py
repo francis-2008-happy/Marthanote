@@ -145,7 +145,7 @@ def generate_summary(text: str, filename: str) -> str:
         Summary:
         """
         
-        model = genai.GenerativeModel("gemini-pro-latest")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(prompt)
         return response.text.strip()
     
@@ -426,7 +426,7 @@ Current question: {q.question}
 Please provide a clear, concise answer:"""
         
         # Generate response using Gemini
-        model = genai.GenerativeModel("gemini-pro-latest")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(prompt)
         answer = response.text
         
