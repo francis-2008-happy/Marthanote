@@ -347,23 +347,23 @@ st.markdown(
     
     .message-content {{
         max-width: 70%;
-        padding: 12px 16px;
-        border-radius: 12px;
+        padding: 10px 14px;
+        border-radius: 8px;
         font-size: 15px;
-        line-height: 1.5;
+        line-height: 1.4;
         word-wrap: break-word;
     }}
     
     .message-user {{
         background: {colors["user_bubble"]};
         color: white;
-        border-radius: 18px 18px 4px 18px;
+        border-radius: 12px 12px 4px 12px;
     }}
     
     .message-assistant {{
         background: {colors["bot_bubble"]};
         color: {colors["text"]};
-        border-radius: 18px 18px 18px 4px;
+        border-radius: 12px 12px 12px 4px;
     }}
     
     @keyframes fadeIn {{
