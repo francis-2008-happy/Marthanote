@@ -137,31 +137,39 @@ st.markdown(
 
     /* Make the chat container scrollable and reserve space for fixed input */
     .chat-container {{
+        /* Layout for individual messages */
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        /* Scrolling behavior */
         overflow-y: auto;
-        max-height: calc(100vh - 360px);
+        /* Let the container grow with content, but limit its max height and then scroll */
+        max-height: calc(100vh - 420px);
+
+        /* Spacing */
         padding-right: 8px;
+        margin-bottom: 20px; /* Space below messages before the divider */
+        /* Add padding at the bottom so the last message isn't hidden by the input bar */
+        padding-bottom: 6rem;
     }}
 
-    /* Ensure main content has bottom padding so messages aren't hidden behind the input */
-    .main-card {{
-        padding-bottom: 40px;
-    }}
-
-    /* Fixed chat input bar styling: keep the input visible when the page scrolls */
-    .chat-container {{
-        padding-bottom: 140px; /* reserve space for the fixed input */
-    }}
-
-    /* Try to target Streamlit's chat input widget and make it sticky at the bottom */
+    /* Fixed chat input bar at the bottom of the viewport */
     div[data-testid="stChatInput"] {{
-        position: sticky !important;
-        bottom: 12px !important;
-        z-index: 1200 !important;
+        position: fixed !important;
+        bottom: 0 !important;
         width: 100% !important;
-        background: {colors["card"]} !important;
-        border-radius: 10px !important;
-        padding: 8px !important;
-        box-shadow: 0 6px 18px rgba(2,6,23,0.06) !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1200 !important;
+        background: {colors["secondary_bg"]} !important;
+        padding: 1rem 0 !important;
+        border-top: 1px solid {colors["border"]} !important;
+    }}
+    /* Center the actual input box within the fixed bar */
+    div[data-testid="stChatInput"] > div {{
+        max-width: 48rem; /* Align with Streamlit's main content width */
+        margin: 0 auto;
     }}
 
     /* Fallback selector used by some Streamlit versions */
@@ -189,6 +197,7 @@ st.markdown(
         padding: 24px;
         border: 1px solid {colors["border"]};
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
     }}
     
     .sidebar-header {{
@@ -277,14 +286,6 @@ st.markdown(
         flex-shrink: 0;
     }}
     
-    /* Chat bubbles */
-    .chat-container {{
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        margin-bottom: 20px;
-    }}
-    
     .chat-message {{
         display: flex;
         gap: 12px;
@@ -299,16 +300,9 @@ st.markdown(
         justify-content: flex-start;
     }}
     
+    /* Hide avatars entirely (removed circular avatars) */
     .message-avatar {{
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 16px;
-        flex-shrink: 0;
+        display: none !important;
     }}
     
     .avatar-user {{
@@ -612,9 +606,9 @@ with st.sidebar:
     st.markdown(
         f"""
         <div style='display:flex; align-items:center; gap:12px; padding:12px 6px;'>
-          <div style='width:44px; height:44px; border-radius:10px; background:{colors['accent']}; display:flex; align-items:center; justify-content:center; font-size:20px; color:white;'>🤖</div>
+        
           <div>
-            <div style='font-weight:800; font-size:16px;'>{'Marty AI'}</div>
+            <div style='font-weight:800; font-size:25px;'>{'Marty AI'}</div>
             <div style='font-size:12px; color:{colors['text_secondary']};'>{doc_count} documents</div>
           </div>
         </div>
@@ -802,9 +796,9 @@ st.markdown(
         f"""
         <div class='top-banner' style='background: linear-gradient(90deg, {colors["accent"]} 0%, #0ea5e9 100%);'>
             <div style='display:flex; align-items:center; gap:12px;'>
-                <div style='font-size:36px; font-weight:800;'>🤖</div>
+                <div style='font-size:36px; font-weight:800;'></div>
                 <div>
-                    <div style='font-size:28px; font-weight:800; color:white;'>Marty AI</div>
+                    <div style='font-size:50px; font-weight:800; color:white;'>Marty AI</div>
                     <div style='opacity:0.95; color: rgba(255,255,255,0.95); font-size:13px;'>Your intelligent document assistant</div>
                 </div>
             </div>
@@ -879,7 +873,7 @@ if st.session_state.pending_query and not st.session_state.processing_query:
 col_chat, col_context = st.columns([3, 1], gap="large")
 
 with col_chat:
-    st.markdown("### 💬 Conversation")
+    st.markdown("")
 
     # Messages display
     if not st.session_state.conversations[convo_key]:
@@ -903,7 +897,6 @@ with col_chat:
                     f"""
                     <div class='chat-message user'>
                         <div class='message-content message-user'>{content}</div>
-                        <div class='message-avatar avatar-user'>You</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -912,7 +905,6 @@ with col_chat:
                 st.markdown(
                     f"""
                     <div class='chat-message assistant'>
-                        <div class='message-avatar avatar-assistant'>🤖</div>
                         <div class='message-content message-assistant'>{content}</div>
                     </div>
                     """,
