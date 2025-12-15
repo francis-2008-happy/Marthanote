@@ -17,6 +17,19 @@ footer {
 """,
     unsafe_allow_html=True,
 )
+
+st.markdown(
+    """
+<style>
+@media (max-width: 768px) {
+    footer {
+        display: none !important;
+    }
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
 # =========================
 # Page Config
 # =========================
