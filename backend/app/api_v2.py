@@ -167,7 +167,9 @@ async def upload_file(
     Upload and process a document synchronously.
     The request will complete only after the document is fully processed.
     """
+    print("--- Starting file upload ---")
     file_location = os.path.join(UPLOAD_FOLDER, file.filename)
+    print(f"File location: {file_location}")
     
     # Create initial document record
     doc = DocumentModel(
@@ -179,34 +181,46 @@ async def upload_file(
     db.add(doc)
     db.commit()
     db.refresh(doc)
+    print(f"Created document record with ID: {doc.id}")
 
     try:
         # Save file temporarily
+        print("Saving uploaded file...")
         with open(file_location, "wb") as f:
             f.write(await file.read())
+        print("File saved.")
 
         # --- Synchronous Processing ---
         
         # 1. Extract text
+        print("Extracting text from file...")
         text = extract_text_from_file(file_location, file.filename)
         if not text.strip():
             raise ValueError("No text could be extracted from the file.")
+        print(f"Text extracted. Length: {len(text)} characters.")
             
         # 2. Generate summary
+        print("Generating summary...")
         summary = generate_summary(text, file.filename)
+        print("Summary generated.")
         
         # 3. Preprocess and chunk text
+        print("Preprocessing and chunking text...")
         processed_text = preprocess_text(text)
         text_without_stopwords = remove_stopwords(processed_text)
         chunks = chunk_text(text_without_stopwords, chunk_size=500, chunk_overlap=150)
         
         if not chunks:
             raise ValueError("Text was extracted, but no processable chunks were generated.")
+        print(f"Text chunked into {len(chunks)} chunks.")
 
         # 4. Add chunks to the vector index
+        print("Adding chunks to vector index...")
         embeddings.add_chunks_to_index(doc.id, chunks)
+        print("Chunks added to index.")
 
         # 5. Finalize database update
+        print("Finalizing database update...")
         doc.summary = summary
         doc.chunk_count = len(chunks)
         doc.document_size = len(text)
@@ -230,8 +244,10 @@ async def upload_file(
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         # Clean up the temporarily saved file
+        print("Cleaning up temporary file...")
         if os.path.exists(file_location):
             os.remove(file_location)
+        print("--- File upload finished ---")
 
 
 # --------------------------
