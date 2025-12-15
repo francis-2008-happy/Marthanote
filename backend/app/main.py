@@ -59,19 +59,14 @@ app = FastAPI(
 # This allows your React frontend to communicate with the backend.
 # Browsers block requests from a different "origin" (domain, protocol, port)
 # unless the server explicitly allows it by sending CORS headers.
-
-origins = [
-    "http://localhost:3000",      # Default for Create React App
-    "http://localhost:5173",      # Default for Vite
-    "http://localhost:8501",      # Default for Streamlit local dev
-    # IMPORTANT: Add the URL of your deployed React frontend here. For example:
-    # "https://your-react-app-on-vercel.com", 
-    "https://marty-ai-frontend.vercel.app/",     # <-- REPLACE THIS WITH YOUR ACTUAL DEPLOYED URL
-]
-
+# This regex allows localhost for development and any Vercel deployment URL
+# for your specific frontend project (e.g., marty-ai-frontend-*.vercel.app).
+allow_origin_regex = r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://marty-ai-frontend(-[a-zA-Z0-9-]+)?\.vercel\.app"
+ 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    # allow_origins=origins, # Replaced by allow_origin_regex for more flexibility
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers, including custom ones like X-Device-Id
