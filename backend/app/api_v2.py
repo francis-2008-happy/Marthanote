@@ -3,7 +3,7 @@ Enhanced FastAPI routes for production Document AI Assistant.
 Features: Auto-summaries, multi-document support, chat history, and more.
 """
 
-from fastapi import APIRouter, UploadFile, File, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -157,116 +157,81 @@ def generate_summary(text: str, filename: str) -> str:
 # --------------------------
 # File Upload with Summary
 # --------------------------
-def process_file_in_background(
-    file_location: str,
-    filename: str,
-    document_id: str,
+
+@router.post("/upload", response_model=UploadResponse)
+async def upload_file(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
 ):
     """
-    Background task to process uploaded file:
-    1. Extract text
-    2. Generate summary
-    3. Chunk text
-    4. Create embeddings
-    5. Update database
+    Upload and process a document synchronously.
+    The request will complete only after the document is fully processed.
     """
+    file_location = os.path.join(UPLOAD_FOLDER, file.filename)
+    
+    # Create initial document record
+    doc = DocumentModel(
+        filename=file.filename,
+        file_path=file_location,
+        summary="Processing...",
+        is_active=True
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+
     try:
-        # Step 1: Extract text
-        text = extract_text_from_file(file_location, filename)
+        # Save file temporarily
+        with open(file_location, "wb") as f:
+            f.write(await file.read())
+
+        # --- Synchronous Processing ---
         
+        # 1. Extract text
+        text = extract_text_from_file(file_location, file.filename)
         if not text.strip():
-            raise ValueError("No text extracted from file")
+            raise ValueError("No text could be extracted from the file.")
+            
+        # 2. Generate summary
+        summary = generate_summary(text, file.filename)
         
-        # Step 2: Generate summary
-        summary = generate_summary(text, filename)
-        
-        # Step 3: Preprocess & chunk
+        # 3. Preprocess and chunk text
         processed_text = preprocess_text(text)
         text_without_stopwords = remove_stopwords(processed_text)
         chunks = chunk_text(text_without_stopwords, chunk_size=500, chunk_overlap=150)
         
         if not chunks:
-            raise ValueError("No chunks generated from text")
-        
-        # Step 4: Update database early with expected chunk count so UI can show progress
-        # Create a new DB session here (do not reuse request-scoped session)
-        from .database import SessionLocal
+            raise ValueError("Text was extracted, but no processable chunks were generated.")
 
-        db_local = SessionLocal()
-        try:
-            doc = db_local.query(DocumentModel).filter(DocumentModel.id == document_id).first()
-            if doc:
-                doc.chunk_count = len(chunks)
-                db_local.commit()
-        finally:
-            db_local.close()
+        # 4. Add chunks to the vector index
+        embeddings.add_chunks_to_index(doc.id, chunks)
 
-        # Step 5: Add to FAISS index (this is the heavier step)
-        embeddings.add_chunks_to_index(document_id, chunks)
-
-        # Finalize: update summary and size using a fresh DB session
-        db_local = SessionLocal()
-        try:
-            doc = db_local.query(DocumentModel).filter(DocumentModel.id == document_id).first()
-            if doc:
-                doc.summary = summary
-                doc.document_size = len(text)
-                db_local.commit()
-                print(f"✓ Document {filename} processed successfully")
-        finally:
-            db_local.close()
-    
-    except Exception as e:
-        print(f"✗ Error processing {filename}: {e}")
-
-
-@router.post("/upload", response_model=UploadResponse)
-async def upload_file(
-    background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db)
-):
-    """
-    Upload a document and generate summary.
-    Returns immediately with document metadata.
-    Processing happens in background.
-    """
-    try:
-        # Create document record
-        file_location = os.path.join(UPLOAD_FOLDER, file.filename)
-        
-        doc = DocumentModel(
-            filename=file.filename,
-            file_path=file_location,
-            summary="Processing...",  # Placeholder
-            is_active=True  # New uploads become active
-        )
-        db.add(doc)
+        # 5. Finalize database update
+        doc.summary = summary
+        doc.chunk_count = len(chunks)
+        doc.document_size = len(text)
         db.commit()
         db.refresh(doc)
         
-        # Save uploaded file
-        with open(file_location, "wb") as f:
-            f.write(await file.read())
-        
-        # Add background processing task
-        background_tasks.add_task(
-            process_file_in_background,
-            file_location,
-            file.filename,
-            doc.id,
-        )
-        
+        print(f"✓ Document {file.filename} processed and indexed successfully.")
+
         return UploadResponse(
             document_id=doc.id,
             filename=doc.filename,
-            summary="Processing... Check back in a moment.",
-            chunk_count=0
+            summary=doc.summary,
+            chunk_count=doc.chunk_count
         )
-    
+
     except Exception as e:
-        db.rollback()
+        # If anything fails, roll back the initial document creation
+        db.delete(doc)
+        db.commit()
+        print(f"✗ Error processing {file.filename}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        # Clean up the temporarily saved file
+        if os.path.exists(file_location):
+            os.remove(file_location)
 
 
 # --------------------------
@@ -507,17 +472,56 @@ async def get_document_summary(document_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/documents/{document_id}/summary/regenerate")
-async def regenerate_document_summary(document_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    """Regenerate summary and embeddings for a document in the background."""
+async def regenerate_document_summary(document_id: str, db: Session = Depends(get_db)):
+    """Regenerate summary and embeddings for a document synchronously."""
+    doc = db.query(DocumentModel).filter(DocumentModel.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    file_location = doc.file_path
+    if not os.path.exists(file_location):
+        raise HTTPException(status_code=404, detail=f"File not found at path: {file_location}. Cannot regenerate.")
+
     try:
-        doc = db.query(DocumentModel).filter(DocumentModel.id == document_id).first()
-        if not doc:
-            raise HTTPException(status_code=404, detail="Document not found")
+        # Mark as processing
+        doc.summary = "Processing..."
+        db.commit()
 
-        # Enqueue background processing to regenerate summary and embeddings
-        background_tasks.add_task(process_file_in_background, doc.file_path, doc.filename, doc.id, db)
+        # --- Synchronous Processing ---
+        
+        # 1. Extract text
+        text = extract_text_from_file(file_location, doc.filename)
+        if not text.strip():
+            raise ValueError("No text could be extracted from the file for regeneration.")
+            
+        # 2. Generate summary
+        summary = generate_summary(text, doc.filename)
+        
+        # 3. Preprocess and chunk text
+        processed_text = preprocess_text(text)
+        text_without_stopwords = remove_stopwords(processed_text)
+        chunks = chunk_text(text_without_stopwords, chunk_size=500, chunk_overlap=150)
+        
+        if not chunks:
+            raise ValueError("Text was extracted, but no processable chunks were generated for regeneration.")
 
-        return {"message": "Regeneration started", "document_id": doc.id}
+        # 4. Delete old index and add new chunks
+        embeddings.delete_index(doc.id)
+        embeddings.add_chunks_to_index(doc.id, chunks)
+
+        # 5. Finalize database update
+        doc.summary = summary
+        doc.chunk_count = len(chunks)
+        doc.document_size = len(text)
+        db.commit()
+        
+        print(f"✓ Document {doc.filename} regenerated and indexed successfully.")
+        
+        return {"message": "Regeneration successful", "document_id": doc.id}
 
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        # Revert summary on failure
+        doc.summary = "Regeneration failed. Please try again."
+        db.commit()
+        print(f"✗ Error regenerating {doc.filename}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
