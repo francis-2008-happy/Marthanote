@@ -9,8 +9,9 @@ import hashlib
 # =========================
 st.set_page_config(page_title="Marty AI", page_icon="🤖", layout="wide")
 
-API_URL = "http://127.0.0.1:8000/api"
+API_URL = "https://marthanote.onrender.com/api"
 
+# "http://127.0.0.1:8000/api"
 # =========================
 # Session State Initialization
 # =========================
@@ -144,6 +145,30 @@ st.markdown(
     /* Ensure main content has bottom padding so messages aren't hidden behind the input */
     .main-card {{
         padding-bottom: 40px;
+    }}
+
+    /* Fixed chat input bar styling: keep the input visible when the page scrolls */
+    .chat-container {{
+        padding-bottom: 140px; /* reserve space for the fixed input */
+    }}
+
+    /* Try to target Streamlit's chat input widget and make it sticky at the bottom */
+    div[data-testid="stChatInput"] {{
+        position: sticky !important;
+        bottom: 12px !important;
+        z-index: 1200 !important;
+        width: 100% !important;
+        background: {colors["card"]} !important;
+        border-radius: 10px !important;
+        padding: 8px !important;
+        box-shadow: 0 6px 18px rgba(2,6,23,0.06) !important;
+    }}
+
+    /* Fallback selector used by some Streamlit versions */
+    .stChatInput {{
+        position: sticky !important;
+        bottom: 12px !important;
+        z-index: 1200 !important;
     }}
     
     [data-testid="stSidebar"] {{

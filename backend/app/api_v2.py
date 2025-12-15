@@ -161,7 +161,6 @@ def process_file_in_background(
     file_location: str,
     filename: str,
     document_id: str,
-    db: Session
 ):
     """
     Background task to process uploaded file:
@@ -190,21 +189,32 @@ def process_file_in_background(
             raise ValueError("No chunks generated from text")
         
         # Step 4: Update database early with expected chunk count so UI can show progress
-        doc = db.query(DocumentModel).filter(DocumentModel.id == document_id).first()
-        if doc:
-            doc.chunk_count = len(chunks)
-            db.commit()
+        # Create a new DB session here (do not reuse request-scoped session)
+        from .database import SessionLocal
+
+        db_local = SessionLocal()
+        try:
+            doc = db_local.query(DocumentModel).filter(DocumentModel.id == document_id).first()
+            if doc:
+                doc.chunk_count = len(chunks)
+                db_local.commit()
+        finally:
+            db_local.close()
 
         # Step 5: Add to FAISS index (this is the heavier step)
         embeddings.add_chunks_to_index(document_id, chunks)
 
-        # Finalize: update summary and size
-        doc = db.query(DocumentModel).filter(DocumentModel.id == document_id).first()
-        if doc:
-            doc.summary = summary
-            doc.document_size = len(text)
-            db.commit()
-            print(f"✓ Document {filename} processed successfully")
+        # Finalize: update summary and size using a fresh DB session
+        db_local = SessionLocal()
+        try:
+            doc = db_local.query(DocumentModel).filter(DocumentModel.id == document_id).first()
+            if doc:
+                doc.summary = summary
+                doc.document_size = len(text)
+                db_local.commit()
+                print(f"✓ Document {filename} processed successfully")
+        finally:
+            db_local.close()
     
     except Exception as e:
         print(f"✗ Error processing {filename}: {e}")
@@ -245,7 +255,6 @@ async def upload_file(
             file_location,
             file.filename,
             doc.id,
-            db
         )
         
         return UploadResponse(
