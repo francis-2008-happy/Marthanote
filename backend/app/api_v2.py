@@ -343,6 +343,14 @@ async def bulk_delete_documents(req: BulkDeleteRequest, db: Session = Depends(ge
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/debug/documents")
+async def debug_list_all_documents(db: Session = Depends(get_db)):
+    """Debug endpoint: return all documents with their stored device_id (no filtering).
+    Intended for debugging deployments only. Remove or protect in production."""
+    docs = db.query(DocumentModel).order_by(desc(DocumentModel.upload_time)).all()
+    return [doc.to_dict() for doc in docs]
+
+
 # --------------------------
 # Chat History Endpoints
 # --------------------------

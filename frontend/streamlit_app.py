@@ -476,6 +476,45 @@ st.markdown(
     hr {{
         border-color: {colors["border"]} !important;
     }}
+
+    /* Hide Streamlit footer/badge so it doesn't block mobile UI */
+    footer,
+    footer > div,
+    .stFooter,
+    .stAppFooter,
+    .viewerBadge_container,
+    [data-testid="stDecoration"],
+    a[href*="streamlit.io"] {{
+        display: none !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        pointer-events: none !important;
+    }}
+
+    /* Ensure chat input is on top and clickable on mobile */
+    div[data-testid="stChatInput"] {{
+        z-index: 99999 !important;
+        pointer-events: auto !important;
+        /* Lift the input a bit to avoid host-injected footers/overlays */
+        bottom: 18px !important;
+    }}
+    div[data-testid="stChatInput"] > div {{
+        pointer-events: auto !important;
+    }}
+
+    /* Ensure the send button and inputs inside the chat input are clickable */
+    div[data-testid="stChatInput"] button,
+    div[data-testid="stChatInput"] input,
+    div[data-testid="stChatInput"] textarea {{
+        pointer-events: auto !important;
+        z-index: 100000 !important;
+    }}
+
+    /* Add extra bottom padding to the chat container so last messages aren't hidden
+       behind mobile overlays or the lifted input bar. */
+    .chat-container {{
+        padding-bottom: 10rem;
+    }}
     </style>
     """,
     unsafe_allow_html=True,
