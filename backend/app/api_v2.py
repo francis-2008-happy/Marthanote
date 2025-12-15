@@ -108,9 +108,16 @@ def extract_text_from_file(file_path: str, filename: str) -> str:
             for page in reader.pages:
                 text += page.extract_text() + "\n"
         elif filename.endswith(".docx"):
+            full_text = []
             doc = Document(file_path)
             for para in doc.paragraphs:
-                text += para.text + "\n"
+                full_text.append(para.text)
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for paragraph in cell.paragraphs:
+                            full_text.append(paragraph.text)
+            text = "\n".join(full_text)
         elif filename.endswith(".txt"):
             with open(file_path, "r", encoding="utf-8") as f:
                 text = f.read()

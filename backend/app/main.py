@@ -11,11 +11,11 @@ import concurrent.futures
 # --------------------------
 def _blocking_download():
     """This is a synchronous function to be run in a thread pool."""
-    print("Downloading NLTK 'stopwords'...")
-    nltk.download('stopwords', quiet=False)
-    print("Downloading NLTK 'punkt'...")
-    nltk.download('punkt', quiet=False)
-    print("Finished NLTK downloads.")
+    nltk.download('stopwords', quiet=True)
+    nltk.download('punkt', quiet=True)
+    # A recent NLTK update causes a lookup error for 'punkt_tab'.
+    # The error message suggests downloading it directly.
+    nltk.download('punkt_tab', quiet=True)
 
 async def download_nltk_data():
     """
@@ -23,32 +23,27 @@ async def download_nltk_data():
     to prevent the server from hanging.
     """
     try:
-        print("Checking for NLTK data...")
         nltk.data.find('corpora/stopwords')
         nltk.data.find('tokenizers/punkt')
-        print("NLTK data (stopwords, punkt) already available.")
+        # Also check for 'punkt_tab' which causes issues in recent NLTK versions.
+        nltk.data.find('tokenizers/punkt_tab')
+        print("NLTK data already available.")
     except LookupError:
-        print("One or more NLTK data packages not found. Downloading...")
+        print("Downloading NLTK data (stopwords, punkt)...")
         loop = asyncio.get_running_loop()
         with concurrent.futures.ThreadPoolExecutor() as pool:
             try:
                 # Run the blocking download in a separate thread with a timeout
-                await asyncio.wait_for(loop.run_in_executor(pool, _blocking_download), timeout=120.0) # Increased timeout
-                print("NLTK data download process finished.")
-                # Verify after download
-                nltk.data.find('corpora/stopwords')
-                nltk.data.find('tokenizers/punkt')
-                print("NLTK data verified successfully after download.")
+                await asyncio.wait_for(loop.run_in_executor(pool, _blocking_download), timeout=60.0)
+                print("NLTK data downloaded successfully.")
             except asyncio.TimeoutError:
                 print("\n--- NLTK Download Timed Out ---")
-                print("The server couldn't download necessary NLTK data in time.")
+                print("The server couldn't download necessary NLTK data.")
                 print("Please check your internet connection and firewall settings.")
                 print("You can also try downloading manually by running these commands in your terminal:")
                 print("python -c \"import nltk; nltk.download('stopwords')\"")
                 print("python -c \"import nltk; nltk.download('punkt')\"")
                 print("---------------------------------\n")
-            except Exception as e:
-                print(f"\n--- An error occurred during NLTK download: {e} ---")
 
 # Create FastAPI app
 app = FastAPI(
