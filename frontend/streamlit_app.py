@@ -4,6 +4,7 @@ import time
 from typing import List, Optional
 import hashlib
 import uuid
+import streamlit.components.v1 as components
 
 
 st.markdown(
@@ -519,6 +520,42 @@ st.markdown(
     </style>
     """,
     unsafe_allow_html=True,
+)
+
+# Inject JS to forcibly remove Streamlit footer/badge overlays that CSS can't reach
+# This runs periodically to catch host-injected overlays and raises the chat input
+components.html(
+        """
+        <script>
+        function hideStreamlitBadge(){
+            try{
+                const selectors = ['footer','footer div','[data-testid="stDecoration"]','.viewerBadge_container','a[href*="streamlit.io"]','.stAppFooter','.stFooter'];
+                selectors.forEach(s=>{
+                    document.querySelectorAll(s).forEach(el=>{
+                        try{
+                            el.style.display='none';
+                            el.style.opacity='0';
+                            el.style.pointerEvents='none';
+                            el.style.height='0';
+                            if(el.remove) el.remove();
+                        }catch(e){}
+                    })
+                });
+
+                const chat = document.querySelector('[data-testid="stChatInput"]');
+                if(chat){
+                    chat.style.zIndex = '2147483647';
+                    chat.style.pointerEvents = 'auto';
+                    chat.style.bottom = '22px';
+                }
+            }catch(e){}
+        }
+        // Run repeatedly to remove overlays injected after initial load
+        setInterval(hideStreamlitBadge, 800);
+        document.addEventListener('DOMContentLoaded', hideStreamlitBadge);
+        </script>
+        """,
+        height=0,
 )
 
 
