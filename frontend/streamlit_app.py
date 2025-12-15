@@ -517,6 +517,15 @@ st.markdown(
     .chat-container {{
         padding-bottom: 10rem;
     }}
+
+    /* On small screens hide Streamlit's built-in chat input (often fixed and covered by badges)
+       and rely on the in-app top/mobile input we'll render instead. */
+    @media (max-width: 768px) {{
+        div[data-testid='stChatInput'] {{
+            display: none !important;
+            visibility: hidden !important;
+        }}
+    }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -564,20 +573,20 @@ components.html(
         height=0,
 )
 
-        # Responsive CSS override for small screens: raise chat input well above any footer/badge
-        st_css = """
-        <style>
-        @media (max-width: 768px) {
-            div[data-testid='stChatInput'] {
-                bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
-            }
-            .chat-container {
-                padding-bottom: 14rem !important;
-            }
-        }
-        </style>
-        """
-        components.html(st_css, height=0)
+# Responsive CSS override for small screens: raise chat input well above any footer/badge
+st_css = """
+<style>
+@media (max-width: 768px) {
+    div[data-testid='stChatInput'] {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
+    }
+    .chat-container {
+        padding-bottom: 14rem !important;
+    }
+}
+</style>
+"""
+components.html(st_css, height=0)
 
 
 # =========================
