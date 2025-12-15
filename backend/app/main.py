@@ -66,7 +66,7 @@ origins = [
     "http://localhost:8501",      # Default for Streamlit local dev
     # IMPORTANT: Add the URL of your deployed React frontend here. For example:
     # "https://your-react-app-on-vercel.com", 
-    "https://<YOUR_REACT_APP_URL_GOES_HERE>", # <-- REPLACE THIS WITH YOUR ACTUAL DEPLOYED URL
+    "https://marty-ai-frontend.vercel.app/",     # <-- REPLACE THIS WITH YOUR ACTUAL DEPLOYED URL
 ]
 
 app.add_middleware(
