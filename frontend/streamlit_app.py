@@ -517,15 +517,6 @@ st.markdown(
     .chat-container {{
         padding-bottom: 10rem;
     }}
-
-    /* On small screens hide Streamlit's built-in chat input (often fixed and covered by badges)
-       and rely on the in-app top/mobile input we'll render instead. */
-    @media (max-width: 768px) {{
-        div[data-testid='stChatInput'] {{
-            display: none !important;
-            visibility: hidden !important;
-        }}
-    }}
     </style>
     """,
     unsafe_allow_html=True,
