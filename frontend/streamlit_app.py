@@ -546,7 +546,13 @@ components.html(
                 if(chat){
                     chat.style.zIndex = '2147483647';
                     chat.style.pointerEvents = 'auto';
-                    chat.style.bottom = '22px';
+                    // Use a larger bottom offset on small screens so the input sits above host badges
+                    const isSmall = window.matchMedia('(max-width: 768px)').matches;
+                    if(isSmall){
+                        chat.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + 120px)';
+                    } else {
+                        chat.style.bottom = '22px';
+                    }
                 }
             }catch(e){}
         }
@@ -557,6 +563,21 @@ components.html(
         """,
         height=0,
 )
+
+        # Responsive CSS override for small screens: raise chat input well above any footer/badge
+        st_css = """
+        <style>
+        @media (max-width: 768px) {
+            div[data-testid='stChatInput'] {
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
+            }
+            .chat-container {
+                padding-bottom: 14rem !important;
+            }
+        }
+        </style>
+        """
+        components.html(st_css, height=0)
 
 
 # =========================
