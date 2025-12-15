@@ -5,6 +5,18 @@ from typing import List, Optional
 import hashlib
 import uuid
 
+
+st.markdown(
+    """
+<style>
+/* Hide ONLY the Streamlit footer (logo) */
+footer {
+    visibility: hidden;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
 # =========================
 # Page Config
 # =========================
