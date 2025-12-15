@@ -155,11 +155,11 @@ st.markdown(
 
     /* Top banner styling (prominent bot header) */
     .top-banner {{
-        padding: 16px 20px;
-        border-radius: 10px;
+        padding: 10px 16px;
+        border-radius: 8px;
         color: white;
-        margin-bottom: 12px;
-        box-shadow: 0 6px 18px rgba(2,6,23,0.08);
+        margin-bottom: 8px;
+        box-shadow: 0 4px 12px rgba(2,6,23,0.06);
         display: flex;
         align-items: center;
         gap: 12px;
@@ -170,18 +170,18 @@ st.markdown(
         /* Layout for individual messages */
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
 
         /* Scrolling behavior */
         overflow-y: auto;
         /* Let the container grow with content, but limit its max height and then scroll */
-        max-height: calc(100vh - 420px);
+        max-height: calc(100vh - 320px);
 
         /* Spacing */
         padding-right: 8px;
-        margin-bottom: 20px; /* Space below messages before the divider */
+        margin-bottom: 12px; /* Space below messages before the divider */
         /* Add padding at the bottom so the last message isn't hidden by the input bar */
-        padding-bottom: 6rem;
+        padding-bottom: 4rem;
     }}
 
     /* Fixed chat input bar at the bottom of the viewport */
@@ -223,11 +223,11 @@ st.markdown(
     /* Cards and containers */
     .main-card {{
         background: {colors["card"]};
-        border-radius: 12px;
-        padding: 24px;
+        border-radius: 8px;
+        padding: 12px;
         border: 1px solid {colors["border"]};
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        margin-bottom: 1rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        margin-bottom: 0.75rem;
     }}
     
     .sidebar-header {{
@@ -374,7 +374,7 @@ st.markdown(
     /* Empty state */
     .empty-state {{
         text-align: center;
-        padding: 48px 24px;
+        padding: 24px 12px;
         color: {colors["text_secondary"]};
     }}
     
@@ -392,11 +392,11 @@ st.markdown(
     .upload-section {{
         background: {colors["secondary_bg"]};
         border: 2px dashed {colors["border"]};
-        border-radius: 12px;
-        padding: 20px;
+        border-radius: 8px;
+        padding: 16px;
         text-align: center;
-        margin-bottom: 16px;
-        transition: all 0.2s ease;
+        margin-bottom: 12px;
+        transition: all 0.15s ease;
         cursor: pointer;
     }}
     
@@ -409,9 +409,9 @@ st.markdown(
     .context-box {{
         background: {colors["secondary_bg"]};
         border: 1px solid {colors["border"]};
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 16px;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
     }}
     
     .context-title {{
