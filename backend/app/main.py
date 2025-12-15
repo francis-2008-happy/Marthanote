@@ -1,5 +1,6 @@
 # backend/app/main.py
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from .api_v2 import router as api_router
 from .database import init_db
 import nltk
@@ -18,7 +19,7 @@ def _blocking_download():
     nltk.download('punkt_tab', quiet=True)
 
 async def download_nltk_data():
-    """
+    """look
     Asynchronously downloads NLTK data if not found, with a timeout
     to prevent the server from hanging.
     """
@@ -51,6 +52,31 @@ app = FastAPI(
     description="Upload documents and ask questions powered by Gemini AI embeddings",
     version="1.0.0",
 )
+
+# --------------------------
+# CORS (Cross-Origin Resource Sharing) Middleware
+# --------------------------
+# This allows your React frontend to communicate with the backend.
+# Browsers block requests from a different "origin" (domain, protocol, port)
+# unless the server explicitly allows it by sending CORS headers.
+
+origins = [
+    "http://localhost:3000",      # Default for Create React App
+    "http://localhost:5173",      # Default for Vite
+    "http://localhost:8501",      # Default for Streamlit local dev
+    # IMPORTANT: Add the URL of your deployed React frontend here. For example:
+    # "https://your-react-app-on-vercel.com", 
+    "https://<YOUR_REACT_APP_URL_GOES_HERE>", # <-- REPLACE THIS WITH YOUR ACTUAL DEPLOYED URL
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers, including custom ones like X-Device-Id
+)
+
 
 # Add startup event to download NLTK data
 @app.on_event("startup")
