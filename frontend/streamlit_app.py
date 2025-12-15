@@ -449,8 +449,9 @@ st.markdown(
     /* Input */
     .stChatInput {{
         border: 1px solid {colors["border"]} !important;
-        border-radius: 24px !important;
+        border-radius: 8px !important;
         background: {colors["card"]} !important;
+        padding: 6px !important;
     }}
     
     .stChatInput input {{
