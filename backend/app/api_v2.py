@@ -423,7 +423,10 @@ async def ask_question(
                 "source_chunks": []
             }
         
-        context_text = "\n".join(relevant_chunks)
+        # Format context with labels so the LLM can reference them
+        context_text = ""
+        for i, chunk in enumerate(relevant_chunks, 1):
+            context_text += f"[Excerpt {i}]:\n{chunk}\n\n"
         
         # Build conversation history for context
         conversation_context = ""
