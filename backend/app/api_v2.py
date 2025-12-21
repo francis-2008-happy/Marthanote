@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 from . import embeddings
 from .database import get_db
 from .models import Document as DocumentModel, ChatMessage
+from .prompts import get_chat_prompt
 
 load_dotenv()
 
@@ -439,19 +440,7 @@ async def ask_question(
                 conversation_context += f"{role}: {msg.content}\n"
         
         # Build prompt with context
-        prompt = f"""You are a helpful AI assistant for document analysis. Answer questions based on the provided context.
-        
-If you don't find relevant information in the context, be honest and say you don't have enough information.
-
-Context from document(s):
-{context_text}
-
-Previous conversation (if any):
-{conversation_context}
-
-Current question: {q.question}
-
-Please provide a clear, concise answer:"""
+        prompt = get_chat_prompt(q.question, context_text, conversation_context)
         
         # Generate response using Gemini
         model = genai.GenerativeModel("gemini-2.5-flash")
@@ -569,3 +558,4 @@ async def regenerate_document_summary(document_id: str, db: Session = Depends(ge
         db.commit()
         print(f"✗ Error regenerating {doc.filename}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
