@@ -153,7 +153,7 @@ def generate_summary(text: str, filename: str) -> str:
         Summary:
         """
         
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content(prompt)
         return response.text.strip()
     
@@ -167,7 +167,7 @@ def generate_summary(text: str, filename: str) -> str:
 # --------------------------
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_file(
+def upload_file(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     x_device_id: Optional[str] = Header(None, convert_underscores=False)
@@ -198,7 +198,7 @@ async def upload_file(
         # Save file temporarily
         print("Saving uploaded file...")
         with open(file_location, "wb") as f:
-            f.write(await file.read())
+            f.write(file.file.read())
         print("File saved.")
 
         # --- Synchronous Processing ---
@@ -377,7 +377,7 @@ async def clear_chat_history(document_id: str, db: Session = Depends(get_db)):
 # Ask Question with Chat Memory
 # --------------------------
 @router.post("/ask")
-async def ask_question(
+def ask_question(
     q: QuestionRequest,
     db: Session = Depends(get_db)
 ):
@@ -446,7 +446,7 @@ async def ask_question(
         prompt = get_chat_prompt(q.question, context_text, conversation_context)
         
         # Generate response using Gemini
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content(prompt)
         answer = response.text
         
@@ -508,7 +508,7 @@ async def get_document_summary(document_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/documents/{document_id}/summary/regenerate")
-async def regenerate_document_summary(document_id: str, db: Session = Depends(get_db)):
+def regenerate_document_summary(document_id: str, db: Session = Depends(get_db)):
     """Regenerate summary and embeddings for a document synchronously."""
     doc = db.query(DocumentModel).filter(DocumentModel.id == document_id).first()
     if not doc:
